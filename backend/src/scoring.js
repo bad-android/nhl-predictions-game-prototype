@@ -25,9 +25,15 @@ function scoreRegularSeason(prediction, result) {
 
   // Score playoff teams (teams predicted to make playoffs)
   if (prediction.playoffTeams && result.playoffTeams) {
-    const correctTeams = prediction.playoffTeams.filter((t) =>
-      result.playoffTeams.includes(t)
-    );
+    // playoffTeams can be {Eastern: [...], Western: [...]} or a flat array
+    const predTeams = Array.isArray(prediction.playoffTeams)
+      ? prediction.playoffTeams
+      : [...(prediction.playoffTeams.Eastern || []), ...(prediction.playoffTeams.Western || [])];
+    const resultTeams = Array.isArray(result.playoffTeams)
+      ? result.playoffTeams
+      : [...(result.playoffTeams.Eastern || []), ...(result.playoffTeams.Western || [])];
+
+    const correctTeams = predTeams.filter((t) => resultTeams.includes(t));
     const teamPoints = correctTeams.length * SCORING_CONFIG.regular.correctPlayoffTeam;
     points += teamPoints;
     details.playoffTeams = { correct: correctTeams.length, points: teamPoints };
@@ -98,18 +104,37 @@ function scorePlayoffs(prediction, result) {
   const rounds = [
     { key: 'round1', config: SCORING_CONFIG.playoffs.round1 },
     { key: 'round2', config: SCORING_CONFIG.playoffs.round2 },
-    { key: 'conferenceFinals', config: SCORING_CONFIG.playoffs.conferenceFinals },
-    { key: 'stanleyCupFinals', config: SCORING_CONFIG.playoffs.stanleyCupFinals },
+    { key: 'confFinals', config: SCORING_CONFIG.playoffs.conferenceFinals },
   ];
 
   for (const round of rounds) {
     if (prediction[round.key] && result[round.key]) {
-      const predWinners = Array.isArray(prediction[round.key])
-        ? prediction[round.key]
-        : [prediction[round.key]];
-      const resultWinners = Array.isArray(result[round.key])
-        ? result[round.key]
-        : [result[round.key]];
+      // Round data can be {Eastern: [...], Western: [...]} or a flat array or single value
+      let predWinners = [];
+      let resultWinners = [];
+
+      if (typeof prediction[round.key] === 'object' && !Array.isArray(prediction[round.key])) {
+        // Object with conference keys: {Eastern: [...], Western: [...]}
+        for (const conf of Object.values(prediction[round.key])) {
+          const vals = Array.isArray(conf) ? conf.filter(Boolean) : (conf ? [conf] : []);
+          predWinners.push(...vals);
+        }
+      } else if (Array.isArray(prediction[round.key])) {
+        predWinners = prediction[round.key].filter(Boolean);
+      } else if (prediction[round.key]) {
+        predWinners = [prediction[round.key]];
+      }
+
+      if (typeof result[round.key] === 'object' && !Array.isArray(result[round.key])) {
+        for (const conf of Object.values(result[round.key])) {
+          const vals = Array.isArray(conf) ? conf.filter(Boolean) : (conf ? [conf] : []);
+          resultWinners.push(...vals);
+        }
+      } else if (Array.isArray(result[round.key])) {
+        resultWinners = result[round.key].filter(Boolean);
+      } else if (result[round.key]) {
+        resultWinners = [result[round.key]];
+      }
 
       const correct = predWinners.filter((w) => resultWinners.includes(w));
       const roundPoints = correct.length * round.config;
@@ -118,9 +143,16 @@ function scorePlayoffs(prediction, result) {
     }
   }
 
-  // Stanley Cup Winner
-  if (prediction.stanleyCupWinner && result.stanleyCupWinner) {
-    if (prediction.stanleyCupWinner === result.stanleyCupWinner) {
+  // Stanley Cup Final winner (cupFinal field)
+  if (prediction.cupFinal && result.cupFinal) {
+    if (prediction.cupFinal === result.cupFinal) {
+      points += SCORING_CONFIG.playoffs.stanleyCupFinals;
+      details.cupFinal = { correct: true, points: SCORING_CONFIG.playoffs.stanleyCupFinals };
+    } else {
+      details.cupFinal = { correct: false, points: 0 };
+    }
+    // Also check as Stanley Cup Winner bonus
+    if (prediction.cupFinal === result.cupFinal) {
       points += SCORING_CONFIG.playoffs.correctStanleyCupWinner;
       details.stanleyCupWinner = { correct: true, points: SCORING_CONFIG.playoffs.correctStanleyCupWinner };
     } else {

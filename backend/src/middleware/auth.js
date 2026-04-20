@@ -3,6 +3,10 @@ const jwt = require('jsonwebtoken');
 const JWT_SECRET = process.env.JWT_SECRET || 'nhl-predictions-secret-key-2025';
 const JWT_EXPIRES_IN = '7d';
 
+if (!process.env.JWT_SECRET) {
+  console.warn('WARNING: Using default JWT secret. Set JWT_SECRET env variable in production.');
+}
+
 function generateToken(user) {
   return jwt.sign(
     { id: user.id, username: user.username, display_name: user.display_name },

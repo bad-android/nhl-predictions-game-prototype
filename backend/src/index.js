@@ -47,7 +47,8 @@ const frontendPaths = [
 const frontendBuildPath = frontendPaths.find(p => fs.existsSync(p));
 if (frontendBuildPath) {
   app.use(express.static(frontendBuildPath));
-  app.get('*', (req, res) => {
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api')) return next();
     res.sendFile(path.join(frontendBuildPath, 'index.html'));
   });
 }
