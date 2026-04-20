@@ -15,7 +15,7 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+  origin: process.env.CORS_ORIGIN || ['http://localhost:3000', 'http://localhost:3001'],
   credentials: true,
 }));
 
@@ -39,8 +39,13 @@ app.get('/api/health', (req, res) => {
 });
 
 // Serve static frontend files if they exist
-const frontendBuildPath = path.join(__dirname, '..', '..', 'frontend', 'build');
-if (fs.existsSync(frontendBuildPath)) {
+const frontendPaths = [
+  path.join(__dirname, '..', 'public'),           // Docker production
+  path.join(__dirname, '..', '..', 'frontend', 'build'), // Local development
+];
+
+const frontendBuildPath = frontendPaths.find(p => fs.existsSync(p));
+if (frontendBuildPath) {
   app.use(express.static(frontendBuildPath));
   app.get('*', (req, res) => {
     res.sendFile(path.join(frontendBuildPath, 'index.html'));

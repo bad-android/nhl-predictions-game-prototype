@@ -3,9 +3,8 @@ const bcrypt = require('bcryptjs');
 const path = require('path');
 const fs = require('fs');
 
-const DB_PATH = fs.existsSync('/data')
-  ? '/data/nhl-predictions.db'
-  : path.join(__dirname, '..', 'data', 'nhl-predictions.db');
+const DATA_DIR = process.env.DATA_DIR || (fs.existsSync('/data') ? '/data' : path.join(__dirname, '..', 'data'));
+const DB_PATH = path.join(DATA_DIR, 'nhl-predictions.db');
 
 const dbDir = path.dirname(DB_PATH);
 if (!fs.existsSync(dbDir)) {
