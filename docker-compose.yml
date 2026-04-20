@@ -1,0 +1,13 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: local/nhl-predictions:dev
+    ports:
+      - "3000:3000"
+    volumes:
+      - nhl-data:/data
+
+volumes:
+  nhl-data:

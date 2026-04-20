@@ -11,7 +11,22 @@ A web-based NHL prediction game where players can enter predictions for the NHL 
 - **Leaderboard**: Real-time player rankings with score breakdown
 - **Overview**: Side-by-side comparison of all players' predictions
 
-## Quick Start with Docker
+## Quick Start with Docker Compose
+
+```bash
+# Build and run the app
+docker compose up --build
+
+# Or run in detached mode
+docker compose up --build -d
+
+# Stop the app
+docker compose down
+```
+
+This builds the Docker image tagged as `local/nhl-predictions:dev` and starts the app on http://localhost:3000.
+
+### Using Docker Directly
 
 ```bash
 # Build the Docker image
